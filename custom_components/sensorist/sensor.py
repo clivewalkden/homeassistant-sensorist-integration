@@ -46,13 +46,15 @@ async def async_setup_entry(
         for device in gateway["devices"]:
             if device["id"] not in known_probes:
                 device_sensor = SensoristDevice(device, gateway_device)
-                entities.append(device_sensor)
+                # entities.append(device_sensor) # Don't register the device itself
                 known_probes.add(device["id"])
 
             for sensor in device["devices"]:
                 if sensor["id"] in known_probes:
                     continue
-                entities.append(SensoristSensor(sensor, device_sensor, api))
+                entities.append(
+                    SensoristSensor(sensor, device_sensor, gateway_device, api)
+                )
                 known_probes.add(sensor["id"])
 
                 _LOGGER.info(sensor)
@@ -156,20 +158,23 @@ class SensoristSensor(RestoreSensor, SensorEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, data, device: SensoristDevice, api: SensoristApi) -> None:
+    def __init__(
+        self, data, device: SensoristDevice, gateway: SensoristHub, api: SensoristApi
+    ) -> None:
         """Initialize the SensoristSensor"""
         self.data = data
         self.device = device
+        self.gateway = gateway
         self.api = api
 
     @property
     def name(self):
         """Return the Sensor name"""
-        if self.data["type"]["name"] == "batt":
-            return None
-        else:
-            # return f"{self.device.name} {self.data['title']}"
-            return f"{self.data['title']}"
+        # if self.data["type"]["name"] == "batt":
+        #    return None
+        # else:
+        # return f"{self.device.name} {self.data['title']}"
+        return f"{self.data['title']}"
 
     @property
     def state_class(self):
@@ -216,6 +221,10 @@ class SensoristSensor(RestoreSensor, SensorEntity):
             },
             name=self.device.name,
             manufacturer=DEVICE_MANUFACTURER,
+            configuration_url=DEVICE_CONFIGURATION_URL,
+            model=f"Sensor {self.device.model}",
+            sw_version=self.device.sw_version,
+            via_device=(DOMAIN, self.gateway.unique_id),
         )
 
     async def get_value(self):
@@ -223,11 +232,8 @@ class SensoristSensor(RestoreSensor, SensorEntity):
         id = str(
             self.api_id
         )  # Specifically convert the id to a string for json to work properly
-        _LOGGER.info(f"self.name {self.name}")
-        sensor_id = self.name.split(" ")
-        _LOGGER.info(sensor_id)
 
-        resp = await self.api.get_sensor_data(self.api_id)
+        resp = await self.api.get_sensor_data(id)
         _LOGGER.info(f"value: {resp['measurements'][id]['value']}")
 
         return resp["measurements"][id]["value"]
