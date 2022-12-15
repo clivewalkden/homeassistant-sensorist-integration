@@ -1,7 +1,7 @@
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import TEMP_CELSIUS, UnitOfElectricPotential, PERCENTAGE
+from homeassistant.const import TEMP_CELSIUS, ELECTRIC_POTENTIAL_VOLT, PERCENTAGE
 from homeassistant.components.sensor import (
     RestoreSensor,
     SensorDeviceClass,
@@ -25,7 +25,7 @@ SCAN_INTERVAL = timedelta(minutes=15)
 SENSORS_MAP = {
     "batt": {
         "name": "Battery",
-        "native_unit_of_measurement": UnitOfElectricPotential.VOLT,
+        "native_unit_of_measurement": ELECTRIC_POTENTIAL_VOLT,
         "device_class": SensorDeviceClass.VOLTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:battery",
