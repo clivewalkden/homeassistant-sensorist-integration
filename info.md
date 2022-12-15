@@ -1,5 +1,3 @@
-# Sensorist Home Assistant Sensor Integration
-
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]][license]
@@ -22,17 +20,19 @@ The following devices have been successfully tested with this integration.
 
 ![example][exampleimg]
 
+{% if not installed %}
 ## Installation
 
 This integration can be installed with HACS, search for `sensorist` and click the `DOWNLOAD` button to install.
 
 Alternatively you can download the repository and copy over the contents of `custom_components` into your server `custom_components`
 
+{% endif %}
 
 
 ## Configuration is done in the UI
 
-Screenshots to follow
+<!---->
 
 ***
 
@@ -42,7 +42,7 @@ Screenshots to follow
 [commits]: https://github.com/clivewalkden/homeassistant-sensorist-integration/commits/main
 [hacs]: https://hacs.xyz
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[exampleimg]: ./documentation/sensor-view.png
+[exampleimg]: documentation/sensor-view.png
 [license]: https://github.com/clivewalkden/homeassistant-sensorist-integration/blob/main/LICENSE
 [license-shield]: https://img.shields.io/github/license/clivewalkden/homeassistant-sensorist-integration.svg?style=for-the-badge
 [maintenance-shield]: https://img.shields.io/badge/maintainer-Clive%20Walkden-blue.svg?style=for-the-badge

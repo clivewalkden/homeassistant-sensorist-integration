@@ -22,6 +22,38 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(minutes=15)
 
 
+SENSORS_MAP = {
+    "batt": {
+        "name": "Battery",
+        "native_unit_of_measurement": UnitOfElectricPotential.VOLT,
+        "device_class": SensorDeviceClass.VOLTAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:battery",
+    },
+    "wireless": {
+        "name": "Signal Strength",
+        "native_unit_of_measurement": PERCENTAGE,
+        "device_class": SensorDeviceClass.POWER_FACTOR,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:wifi",
+    },
+    "temp": {
+        "name": "Temperature",
+        "native_unit_of_measurement": TEMP_CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:thermometer",
+    },
+    "humi": {
+        "name": "Humidity",
+        "native_unit_of_measurement": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:water-percent",
+    },
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -46,13 +78,15 @@ async def async_setup_entry(
         for device in gateway["devices"]:
             if device["id"] not in known_probes:
                 device_sensor = SensoristDevice(device, gateway_device)
-                entities.append(device_sensor)
+                # entities.append(device_sensor) # Don't register the device itself
                 known_probes.add(device["id"])
 
             for sensor in device["devices"]:
                 if sensor["id"] in known_probes:
                     continue
-                entities.append(SensoristSensor(sensor, device_sensor, api))
+                entities.append(
+                    SensoristSensor(sensor, device_sensor, gateway_device, api)
+                )
                 known_probes.add(sensor["id"])
 
                 _LOGGER.info(sensor)
@@ -156,53 +190,52 @@ class SensoristSensor(RestoreSensor, SensorEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, data, device: SensoristDevice, api: SensoristApi) -> None:
+    def __init__(
+        self, data, device: SensoristDevice, gateway: SensoristHub, api: SensoristApi
+    ) -> None:
         """Initialize the SensoristSensor"""
         self.data = data
         self.device = device
+        self.gateway = gateway
         self.api = api
+        self.sensor = data["type"]["name"]
 
     @property
     def name(self):
         """Return the Sensor name"""
-        if self.data["type"]["name"] == "batt":
-            return None
-        else:
-            # return f"{self.device.name} {self.data['title']}"
-            return f"{self.data['title']}"
+        # if self.data["type"]["name"] == "batt":
+        #    return None
+        # else:
+        # return f"{self.device.name} {self.data['title']}"
+        return SENSORS_MAP[self.sensor]["name"]
 
     @property
     def state_class(self):
-        return SensorStateClass.MEASUREMENT
+        """Return the state class of this entity, if any."""
+        return SENSORS_MAP[self.sensor]["state_class"]
 
     @property
     def device_class(self) -> SensorDeviceClass:
-        if self.data["type"]["name"] == "temp":
-            return SensorDeviceClass.TEMPERATURE
-        elif self.data["type"]["name"] == "humi":
-            return SensorDeviceClass.HUMIDITY
-        elif self.data["type"]["name"] == "wireless":
-            return SensorDeviceClass.POWER_FACTOR
-        elif self.data["type"]["name"] == "batt":
-            return SensorDeviceClass.VOLTAGE
+        """Return the class of this entity."""
+        return SENSORS_MAP[self.sensor]["device_class"]
 
     @property
     def native_unit_of_measurement(self) -> str:
-        if self.data["type"]["name"] == "temp":
-            return TEMP_CELSIUS
-        elif self.data["type"]["name"] == "humi":
-            return PERCENTAGE
-        elif self.data["type"]["name"] == "wireless":
-            return PERCENTAGE
-        elif self.data["type"]["name"] == "batt":
-            return UnitOfElectricPotential.VOLT
+        """Return the unit of measurement of the sensor, if any."""
+        return SENSORS_MAP[self.sensor]["native_unit_of_measurement"]
 
     @property
     def unique_id(self) -> str:
+        """Return a unique ID."""
         return f"sensorist.{self.device.unique_id}_{self.data['title'].lower}"
 
     @property
+    def icon(self):
+        return SENSORS_MAP[self.sensor]["icon"]
+
+    @property
     def api_id(self) -> int:
+        """Store the sensor api id for polling"""
         return self.data["id"]
 
     @property
@@ -216,18 +249,19 @@ class SensoristSensor(RestoreSensor, SensorEntity):
             },
             name=self.device.name,
             manufacturer=DEVICE_MANUFACTURER,
+            configuration_url=DEVICE_CONFIGURATION_URL,
+            model=f"Sensor {self.device.model}",
+            sw_version=self.device.sw_version,
+            via_device=(DOMAIN, self.gateway.unique_id),
         )
 
     async def get_value(self):
-        """Return the sensor value"""
+        """Return the sensor value from the api"""
         id = str(
             self.api_id
         )  # Specifically convert the id to a string for json to work properly
-        _LOGGER.info(f"self.name {self.name}")
-        sensor_id = self.name.split(" ")
-        _LOGGER.info(sensor_id)
 
-        resp = await self.api.get_sensor_data(self.api_id)
+        resp = await self.api.get_sensor_data(id)
         _LOGGER.info(f"value: {resp['measurements'][id]['value']}")
 
         return resp["measurements"][id]["value"]
