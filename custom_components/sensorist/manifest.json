@@ -1,0 +1,15 @@
+{
+  "domain": "sensorist",
+  "name": "Sensorist Sensor Integration",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/sensorist",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@clivewalkden"
+  ],
+  "iot_class": "cloud_polling"
+}
