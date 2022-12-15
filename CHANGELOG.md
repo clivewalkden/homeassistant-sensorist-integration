@@ -21,6 +21,12 @@ Given a version number MAJOR.MINOR.PATCH, increment the:
 
 ### [Unreleased]
 
+## [1.0.1] - 2022-12-15
+### Fixed
+- Added missing version number from the `manifest.json`
+- Rolled back to using `ELECTRIC_POTENTIAL_VOLT` for 2022.12 version instances
+
+
 ## [1.0.0] - 2022-12-15
 #### Added
 - Initial Release
